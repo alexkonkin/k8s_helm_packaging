@@ -6,9 +6,7 @@ to build package
   helm package <packagename>
 
 to install the package we can use the next commands:
-1.
-  expose our local repository (~/.helm) via http:
+1. expose our local repository (~/.helm) via http:
   helm serve&
-2.
-  install petclinic package
+2. install petclinic package
   helm install petclinic --name=petclinic
