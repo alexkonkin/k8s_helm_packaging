@@ -23,18 +23,46 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          # Use secret in real usage
+          - name: MYSQL_ROOT_PASSWORD
+            value: petclinic
+          - name: MYSQL_DATABASE
+            value: petclinic
           ports:
-            - name: http
-              containerPort: 80
+            - name: mysql
+              containerPort: 3306
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          volumeMounts:
+          - name: mysql-data-volume
+            mountPath: /var/lib/mysql
+          - name: mysql-init-volume
+            mountPath: /docker-entrypoint-initdb.d/
+      initContainers:
+      - name: copy
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args: ["wget https://github.com/alexkonkin/petclinic/raw/master/conf/mysql/schema.sql -P /docker-entrypoint-initdb.d/"]
+        volumeMounts:
+        - name: mysql-init-volume
+          mountPath: /docker-entrypoint-initdb.d/
+      volumes:
+      - name: mysql-data-volume
+        persistentVolumeClaim:
+          claimName: mysql-data-claim
+      - name: mysql-init-volume
+        persistentVolumeClaim:
+          claimName: mysql-init-claim
+
+
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: mysql
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: mysql
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}
